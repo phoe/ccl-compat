@@ -5,16 +5,23 @@
 
 (defpackage #:ccl
   (:use #:cl)
-  (:export ;; just export them for now, implement later
-   #:pkg-arg #:no-such-package
-   #:report-condition
-   #:definition-base-name #:definition-type-instance
-   #:method-def-parameters
-   #:non-nil-symbolp #:setf-function-name-p
-   #:parse-macro-1
-   #:record-arglist
-   #:cheap-eval-in-environment
-   #:read-recording-source #:*loading-toplevel-location*
-   #:*nx-source-note-map*
-   #:block-like #:progn-print #:*print-right-margin*
-   #:*show-condition-context*))
+  (:export
+   #:pkg-arg ;; function, TODO
+   #:no-such-package ;; condition, TODO
+   #:report-condition ;; generic function, DONE, portable
+   #:definition-base-name ;; generic, TODO, needs macro WHILE
+   #:definition-type-instance ;; generic, TODO
+   #:method-def-parameters ;; function, TODO
+   #:non-nil-symbolp ;; function, DONE, portable
+   #:setf-function-name-p ;; function, DONE, portable after edit
+   #:parse-macro-1 ;; function, TODO
+   #:record-arglist ;; function, TODO
+   #:cheap-eval-in-environment ;; function, TODO, complex
+   #:read-recording-source ;; function, TODO, complex
+   #:*loading-toplevel-location* ;; variable, TODO, needs to be implemented?
+   #:*nx-source-note-map* ;; variable, TODO, needs to be implemented?, hashtable
+   #:block-like ;; function, DONE, portable
+   #:progn-print ;; function, DONE, portable
+   #:*print-right-margin* ;; variable, DONE, standard
+   #:*show-condition-context* ;; variable, TODO, needs to be implemented?
+   ))
