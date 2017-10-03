@@ -6,7 +6,7 @@
 (defpackage #:ccl
   (:use #:cl)
   (:export
-   #:pkg-arg ;; function, TODO
+   #:pkg-arg ;; function, TODO, documented
    #:no-such-package ;; condition, TODO
    #:report-condition ;; generic function, DONE, portable
    #:definition-base-name ;; generic, TODO, needs macro WHILE

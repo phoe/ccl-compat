@@ -5,25 +5,31 @@
 
 (in-package #:ccl)
 
+;;;; Compatibility functions
+
+(defun neq (x y)
+  (not (eq x y)))
+
 ;;;; PKG-ARG
 
 (defun pkg-arg (thing &optional deleted-ok)
   (let* ((xthing (cond ((or (symbolp thing) (typep thing 'character))
-                        (string thing))
+                        (string thing)) ;; turn into string
                        ((typep thing 'string)
                         (ensure-simple-string thing))
                        (t
                         thing))))
-    (let* ((typecode (typecode xthing)))
-      (declare (fixnum typecode))
-      (cond ((= typecode target::subtag-package)
-             (if (or deleted-ok (pkg.names xthing))
-                 xthing
-                 (error "~S is a deleted package ." thing)))
-            ((= typecode target::subtag-simple-base-string)
-             (or (%find-pkg xthing)
-                 (%kernel-restart $xnopkg xthing)))
-            (t (report-bad-arg thing 'simple-string))))))
+    (let* ((typecode (typecode xthing))) ;; we most likely won't need this
+      (declare (fixnum typecode)) ;; since it's some kind of internal tag
+      (cond ((= typecode target::subtag-package) ;; if thing is a package
+             (if (or deleted-ok ;; are deleted packages okay?
+                     (pkg.names xthing)) ;; get package name
+                 xthing ;; return the package
+                 (error "~S is a deleted package ." thing))) ;; error
+            ((= typecode target::subtag-simple-base-string) ;; package name?
+             (or (%find-pkg xthing) ;; find package with that name
+                 (%kernel-restart $xnopkg xthing))) ;; or lose
+            (t (report-bad-arg thing 'simple-string)))))) ;; error on badarg
 
 ;;;; NO-SUCH-PACKAGE
 
