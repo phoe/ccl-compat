@@ -13,23 +13,18 @@
 ;;;; PKG-ARG
 
 (defun pkg-arg (thing &optional deleted-ok)
-  (let* ((xthing (cond ((or (symbolp thing) (typep thing 'character))
-                        (string thing)) ;; turn into string
-                       ((typep thing 'string)
-                        (ensure-simple-string thing))
-                       (t
-                        thing))))
-    (let* ((typecode (typecode xthing))) ;; we most likely won't need this
-      (declare (fixnum typecode)) ;; since it's some kind of internal CCL tag
-      (cond ((= typecode target::subtag-package) ;; if thing is a package
-             (if (or deleted-ok ;; are deleted packages okay?
-                     (pkg.names xthing)) ;; get package name
-                 xthing ;; return the package
-                 (error "~S is a deleted package ." thing))) ;; error
-            ((= typecode target::subtag-simple-base-string) ;; package name?
-             (or (%find-pkg xthing) ;; find package with that name
-                 (%kernel-restart $xnopkg xthing))) ;; or lose
-            (t (report-bad-arg thing 'simple-string)))))) ;; error on badarg
+  (let* ((xthing (typecase thing
+                   ((or symbol character) (string thing))
+                   (string (coerce thing 'simple-string))
+                   (t thing))))
+    (cond ((packagep xthing)
+           (if (or deleted-ok (package-name xthing))
+               xthing
+               (error "~S is a deleted package." thing)))
+          ((stringp xthing)
+           (or (find-package xthing)
+               (error "There is no package named ~S." xthing)))
+          (t (error "Cannot find package for datum: ~S" thing)))))
 
 ;;;; NO-SUCH-PACKAGE
 
