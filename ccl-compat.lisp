@@ -94,6 +94,14 @@ equivalent definitions. The default method returns the rightmost atom in name.")
 
 ;;;; METHOD-DEF-PARAMETERS
 
+(defun classp (x)
+  (if (%standard-instance-p x)
+      (< (the fixnum (instance.hash x)) max-class-ordinal)
+      (and (typep x 'macptr) (foreign-classp x))))
+
+(defmacro %standard-instance-p (i)
+  `(eq (typecode ,i) ,(type-keyword-code :instance)))
+
 (defun method-def-parameters (m)
   (when (typep m 'method-function)
     (setq m (%method-function-method m)))
@@ -126,7 +134,7 @@ equivalent definitions. The default method returns the rightmost atom in name.")
 
 ;;;; NON-NIL-SYMBOLP
 
-(defun non-nil-symbolp (x)
+(defun non-nil-symbol-p (x)
   "Returns symbol if true"
   (if (symbolp x) x))
 
@@ -182,172 +190,18 @@ equivalent definitions. The default method returns the rightmost atom in name.")
 
 ;;;; CHEAP-EVAL-IN-ENVIRONMENT
 
-(defun cheap-eval-in-environment (form env &aux sym)
-  ;; Allow ADVICE, TRACE to have effects on self-calls.
-  (declare (notinline cheap-eval-in-environment))
-  ;; records source locations if *nx-source-note-map* is bound by caller
-  (setq *loading-toplevel-location*
-        (or (nx-source-note form) *loading-toplevel-location*))
-  (flet ((progn-in-env (body&decls parse-env base-env)
-           (multiple-value-bind (body decls) (parse-body body&decls parse-env)
-             (setq base-env
-                   (augment-environment
-                    base-env
-                    :declare (decl-specs-from-declarations decls)))
-             (loop with default-location = *loading-toplevel-location*
-                   while (cdr body) as form = (pop body)
-                   do (cheap-eval-in-environment form base-env)
-                   do (setq *loading-toplevel-location* default-location))
-             (cheap-eval-in-environment (car body) base-env))))
-    (if form
-        (cond
-          ((symbolp form)
-           (multiple-value-bind (expansion win)
-               (cheap-eval-macroexpand-1 form env)
-             (if win
-                 (cheap-eval-in-environment expansion env)
-                 (let* ((defenv (definition-environment env))
-                        (constant
-                          (if defenv (assq form (defenv.constants defenv))))
-                        (constval (%cdr constant)))
-                   (if constant
-                       (if (neq (%unbound-marker-8) constval)
-                           constval
-                           (error "Can't determine value of constant symbol ~s"
-                                  form))
-                       (if (constant-symbol-p form)
-                           (%sym-global-value form)
-                           (symbol-value form)))))))
-          ((atom form) form)
-          ((eq (setq sym (%car form)) 'quote)
-           (verify-arg-count form 1 1)
-           (%cadr form))
-          ((eq sym 'function)
-           (verify-arg-count form 1 1)
-           (cond ((symbolp (setq sym (%cadr form)))
-                  (multiple-value-bind (kind local-p)
-                      (function-information sym env)
-                    (if (and local-p (eq kind :macro))
-                        (error "~s can't be used to reference lexically ~
-defined macro ~S" 'function sym)))
-                  (%function sym))
-                 ((setf-function-name-p sym)
-                  (multiple-value-bind (kind local-p)
-                      (function-information sym env)
-                    (if (and local-p (eq kind :macro))
-                        (error "~s can't be used to reference lexically ~
-defined macro ~S" 'function sym)))
-                  (%function (setf-function-name (%cadr sym))))
-                 (t (cheap-eval-function nil sym env))))
-          ((eq sym 'nfunction)
-           (verify-arg-count form 2 2)
-           (cheap-eval-function (%cadr form) (%caddr form) env))
-          ((eq sym 'progn) (progn-in-env (%cdr form) env env))
-          ((eq sym 'setq)
-           (if (not (%ilogbitp 0 (list-length form)))
-               (verify-arg-count form 0 0)) ;Invoke a "Too many args" error.
-           (let* ((sym nil)
-                  (val nil)
-                  (original form))
-             (while (setq form (%cdr form))
-                    (setq sym (require-type (pop form) 'symbol))
-                    (multiple-value-bind (expansion expanded)
-                        (cheap-eval-macroexpand-1 sym env)
-                      (if expanded
-                          (setq val (cheap-eval-in-environment
-                                     (cheap-eval-transform
-                                      original `(setf ,expansion ,(%car form)))
-                                     env))
-                          (set sym (setq val (cheap-eval-in-environment
-                                              (%car form) env))))))
-             val))
-          ((eq sym 'eval-when)
-           (destructuring-bind (when . body) (%cdr form)
-             (when (or (memq 'eval when) (memq :execute when))
-               (progn-in-env body env env))))
-          ((eq sym 'if)
-           (destructuring-bind (test true &optional false) (%cdr form)
-             (setq test (let ((*loading-toplevel-location*
-                                *loading-toplevel-location*))
-                          (cheap-eval-in-environment test env)))
-             (cheap-eval-in-environment (if test true false) env)))
-          ((eq sym 'locally) (progn-in-env (%cdr form) env env))
-          ((and (symbolp sym)
-                (compiler-special-form-p sym)
-                (not (functionp (fboundp sym))))
-           (if (eq sym 'unwind-protect)
-               (destructuring-bind (protected-form . cleanup-forms) (cdr form)
-                 (unwind-protect
-                      (let ((*loading-toplevel-location*
-                              *loading-toplevel-location*))
-                        (cheap-eval-in-environment protected-form env))
-                   (progn-in-env cleanup-forms env env)))
-               (let ((fn (cheap-eval-function
-                          nil
-                          (cheap-eval-transform
-                           form `(lambda () (progn ,form))) env)))
-                 (funcall fn))))
-          ((and (symbolp sym) (macro-function sym env))
-           (cheap-eval-in-environment (cheap-eval-macroexpand-1 form env) env))
-          ((or (symbolp sym)
-               (and (consp sym) (eq (%car sym) 'lambda)))
-           (let ((args nil) (form-location *loading-toplevel-location*))
-             (dolist (elt (%cdr form))
-               (push (cheap-eval-in-environment elt env) args)
-               (setq *loading-toplevel-location* form-location))
-             (apply #'call-check-regs (if (symbolp sym)
-                                          sym (cheap-eval-function nil sym env))
-                    (nreverse args))))
-          (t
-           (signal-simple-condition 'simple-program-error
-                                    "Car of ~S is not a function name or ~
-lambda-expression." form))))))
+(defun cheap-eval-in-environment (form env)
+  ;; ENV is not used anywhere - this is a simple EVAL call
+  (declare (ignore env))
+  (eval form))
 
 ;;;; READ-RECORDING-SOURCE
 
 (defun read-recording-source (stream &key eofval file-name start-offset
                                        map save-source-text)
-  "Read a top-level form, perhaps recording source locations.
-If MAP is NIL, just reads a form as if by READ.
-If MAP is non-NIL, returns a second value of a source-note object describing
-the form.
-In addition, if MAP is a hash table, it gets filled with source-note's for all
-non-atomic nested subforms."
-  (when (null start-offset) (setq start-offset 0))
-  (typecase map
-    (null (values (read-internal stream nil eofval nil) nil))
-    (hash-table
-     (let* ((stream (recording-input-stream stream))
-            (recording (list stream map file-name start-offset))
-            (*recording-source-streams* (cons recording
-                                              *recording-source-streams*)))
-       (declare (dynamic-extent recording *recording-source-streams*))
-       (multiple-value-bind (form source-note)
-           (read-internal stream nil eofval nil)
-         (when (and source-note (not (eq form eofval)))
-           (assert (null (source-note.source source-note)))
-           (when save-source-text
-             (setf (source-note.source source-note)
-                   (fetch-octets-from-stream
-                    stream
-                    (- (source-note-start-pos source-note)
-                       start-offset)
-                    (- (source-note-end-pos source-note)
-                       start-offset)))))
-         (values form source-note))))
-    (T ;; not clear if this is ever useful
-     (let* ((start-pos (stream-position stream))
-            (form (read-internal stream nil eofval nil))
-            (end-pos (and start-pos (neq form eofval) (stream-position stream)))
-            (source-note
-              (and end-pos
-                   (make-source-note :filename file-name
-                                     :start-pos (+ start-offset start-pos)
-                                     :end-pos (+ start-offset end-pos)))))
-       (when (and source-note save-source-text)
-         (setf (source-note.source source-note)
-               (fetch-octets-from-stream stream start-pos end-pos)))
-       (values form source-note)))))
+  ;; We are not recording source - this is a simple READ call
+  (declare (ignore map file-name start-offset save-source-text))
+  (values (read stream nil eofval nil) nil))
 
 ;;;; *LOADING-TOPLEVEL-LOCATION*
 

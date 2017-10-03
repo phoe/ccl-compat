@@ -16,8 +16,8 @@
    #:setf-function-name-p ;; function, DONE, portable after edit
    #:parse-macro-1 ;; function, TODO
    #:record-arglist ;; function, TODO
-   #:cheap-eval-in-environment ;; function, TODO, complex
-   #:read-recording-source ;; function, TODO, complex
+   #:cheap-eval-in-environment ;; function, DONE, stubbed with CL:EVAL
+   #:read-recording-source ;; function, DONE, stubbed with CL:READ
    #:*loading-toplevel-location* ;; variable, TODO, needs to be implemented?
    #:*nx-source-note-map* ;; variable, TODO, needs to be implemented?, hashtable
    #:block-like ;; function, DONE, portable
