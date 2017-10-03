@@ -7,9 +7,9 @@
   (:use #:cl)
   (:export
    #:pkg-arg ;; function, TODO, documented
-   #:no-such-package ;; condition, TODO
+   #:no-such-package ;; condition, DONE, edited
    #:report-condition ;; generic function, DONE, portable
-   #:definition-base-name ;; generic, TODO, needs macro WHILE
+   #:definition-base-name ;; generic, DONE, turned WHILE into DO
    #:definition-type-instance ;; generic, TODO
    #:method-def-parameters ;; function, TODO
    #:non-nil-symbolp ;; function, DONE, portable

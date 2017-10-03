@@ -20,7 +20,7 @@
                        (t
                         thing))))
     (let* ((typecode (typecode xthing))) ;; we most likely won't need this
-      (declare (fixnum typecode)) ;; since it's some kind of internal tag
+      (declare (fixnum typecode)) ;; since it's some kind of internal CCL tag
       (cond ((= typecode target::subtag-package) ;; if thing is a package
              (if (or deleted-ok ;; are deleted packages okay?
                      (pkg.names xthing)) ;; get package name
@@ -35,7 +35,7 @@
 
 (define-condition no-such-package (package-error) ()
   (:report (lambda (c s)
-             (format s (%rsc-string $xnopkg) (package-error-package c)))))
+             (format s "Package ~S was not found." (package-error-package c)))))
 
 ;;;; REPORT-CONDITION
 
@@ -64,10 +64,10 @@ definitions of that name, this def should be included.  Typically this is a
 symbol.  It's used as a key in an EQ hash table, so must return EQ values for
 equivalent definitions. The default method returns the rightmost atom in name.")
   (:method ((dt definition-type) name)
-    (while (consp name)
-           (let ((x (last name)))
-             (setq name (or (cdr x) (car x)))))
-    name))
+    (do ()
+        ((not (consp name)) name)
+      (let ((x (last name)))
+        (setq name (or (cdr x) (car x)))))))
 
 ;;;; DEFINITION-TYPE-INSTANCE
 
@@ -91,12 +91,6 @@ equivalent definitions. The default method returns the rightmost atom in name.")
     ((class class) &key (if-does-not-exist :error))
   (definition-type-instance (class-prototype class)
                             :if-does-not-exist if-does-not-exist))
-
-;;;; NON-NIL-SYMBOLP
-
-(defun non-nil-symbolp (x)
-  "Returns symbol if true"
-  (if (symbolp x) x))
 
 ;;;; METHOD-DEF-PARAMETERS
 
@@ -129,6 +123,12 @@ equivalent definitions. The default method returns the rightmost atom in name.")
                                            (eq (car s) 'eql))))
                               specs))
               (values name quals specs)))))))
+
+;;;; NON-NIL-SYMBOLP
+
+(defun non-nil-symbolp (x)
+  "Returns symbol if true"
+  (if (symbolp x) x))
 
 ;;;; SETF-FUNCTION-NAME-P
 
