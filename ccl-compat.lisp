@@ -666,19 +666,20 @@ function and process in the warning message")
               (return))))
       list
       (let* ((reason
-               (when max
-                 (if (not (alexandria:proper-list-p list))
-                     "it is not a proper list"
-                     (let* ((len (length list)))
-                       (if (eql min max)
-                           (format nil "it contains ~d elements, and exactly ~
+               (if max
+                   (if (not (alexandria:proper-list-p list))
+                       "it is not a proper list"
+                       (let* ((len (length list)))
+                         (if (eql min max)
+                             (format nil "it contains ~d elements, and exactly ~
 ~d are expected" len min)
-                           (if (< len min)
-                               (format nil "it contains ~d elements, and at ~
+                             (if (< len min)
+                                 (format nil "it contains ~d elements, and at ~
 least ~d are expected" len min)
-                               (format nil "it contains ~d elements, and at ~
+                                 (format nil "it contains ~d elements, and at ~
 most ~d are expected" len max)))))
-                 (format nil "it does not contain at least ~d elements" min))))
+                   (format nil "it does not contain at least ~d ~
+elements" min))))
         (error
          "~s can't be destructured against the lambda list ~s, because ~a."
          list lambda-list reason))))
