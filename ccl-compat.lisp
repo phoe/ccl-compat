@@ -22,8 +22,8 @@
                    (t thing))))
     (cond ((packagep xthing)
            (if (or deleted-ok (package-name xthing))
-               xthing
-               (error "~S is a deleted package." thing)))
+             xthing
+             (error "~S is a deleted package." thing)))
           ((stringp xthing)
            (or (find-package xthing)
                (error "There is no package named ~S." xthing)))
@@ -56,8 +56,8 @@
 
 (defun definition-base-name (def-type def)
   (if (eq 'package def-type)
-      (intern def :keyword)
-      def))
+    (intern def :keyword)
+    def))
 
 ;;;; DEFINITION-TYPE-INSTANCE
 
@@ -72,30 +72,30 @@
 
 (defun method-def-parameters (m)
   (if (typep m 'method)
-      (values (method-name m)
-              (method-qualifiers m)
-              (c2mop:method-specializers m))
-      (let (name quals specs data last)
-        (when (consp m)
-          (when (eq (car m) :method) (setq m (cdr m)))
-          (setq data (cdr m) last (last data))
-          (when (null (cdr last))
-            (setq last (car last))
-            (if (and (listp last) (neq (car last) 'eql))
-                (setq quals (butlast data) specs last)
-                (setq specs data))
-            (setq name (car m))
-            (when (and (or (non-nil-symbol-p name) (setf-function-name-p name))
-                       (every #'(lambda (q) (not (listp q))) quals)
-                       (every #'(lambda (s)
-                                  (or (non-nil-symbol-p s)
-                                      (typep s 'class)
-                                      (and (consp s)
-                                           (consp (cdr s))
-                                           (null (cddr s))
-                                           (eq (car s) 'eql))))
-                              specs))
-              (values name quals specs)))))))
+    (values (method-name m)
+            (method-qualifiers m)
+            (c2mop:method-specializers m))
+    (let (name quals specs data last)
+      (when (consp m)
+        (when (eq (car m) :method) (setq m (cdr m)))
+        (setq data (cdr m) last (last data))
+        (when (null (cdr last))
+          (setq last (car last))
+          (if (and (listp last) (neq (car last) 'eql))
+            (setq quals (butlast data) specs last)
+            (setq specs data))
+          (setq name (car m))
+          (when (and (or (non-nil-symbol-p name) (setf-function-name-p name))
+                     (every #'(lambda (q) (not (listp q))) quals)
+                     (every #'(lambda (s)
+                                (or (non-nil-symbol-p s)
+                                    (typep s 'class)
+                                    (and (consp s)
+                                         (consp (cdr s))
+                                         (null (cddr s))
+                                         (eq (car s) 'eql))))
+                            specs))
+            (values name quals specs)))))))
 
 ;;;; NON-NIL-SYMBOLP
 
@@ -184,11 +184,11 @@
                    v)))
         (unless use-whole-var
           (if (atom w)
-              (simple-var w wholeform)
-              (progn
-                (setq w (structured-var "WHOLE" w
-                                        (if cdr-p `(cdr ,wholeform) wholeform))
-                      cdr-p nil))))
+            (simple-var w wholeform)
+            (progn
+              (setq w (structured-var "WHOLE" w
+                                      (if cdr-p `(cdr ,wholeform) wholeform))
+                    cdr-p nil))))
         (multiple-value-bind (min max) (lambda-list-bounds normalized)
           (simple-var argptr `(prepare-to-destructure
                                ,@(if cdr-p `((cdr ,w)) `(,w))
@@ -199,29 +199,29 @@
           (do* ((tail normalized (cdr tail)))
                ((null tail)
                 (if has-&key
-                    (let* ((key-check-form `(check-keywords
-                                             ',(nreverse keywords)
-                                             ,rest-arg-name ,allow-other-keys)))
-                      (if first-keyword-init
-                          (rplaca (cdr first-keyword-init)
-                                  `(progn
-                                     ,key-check-form
-                                     ,(cadr first-keyword-init)))
-                          (let* ((check-var (gensym "CHECK")))
-                            (push `(ignorable ,check-var) decls)
-                            (simple-var check-var key-check-form)))))
+                  (let* ((key-check-form `(check-keywords
+                                           ',(nreverse keywords)
+                                           ,rest-arg-name ,allow-other-keys)))
+                    (if first-keyword-init
+                      (rplaca (cdr first-keyword-init)
+                              `(progn
+                                 ,key-check-form
+                                 ,(cadr first-keyword-init)))
+                      (let* ((check-var (gensym "CHECK")))
+                        (push `(ignorable ,check-var) decls)
+                        (simple-var check-var key-check-form)))))
                 (values lets decls))
             (let* ((var (car tail)))
               (cond ((or (eq var '&rest) (eq var '&body))
                      (let* ((r (cadr tail))
                             (init argptr))
                        (if (listp r)
-                           (setq rest-arg-name
-                                 (structured-var "REST" r init))
-                           (progn
-                             (setq rest-arg-name (gensym "REST"))
-                             (simple-var rest-arg-name init)
-                             (simple-var r rest-arg-name ))))
+                         (setq rest-arg-name
+                               (structured-var "REST" r init))
+                         (progn
+                           (setq rest-arg-name (gensym "REST"))
+                           (simple-var rest-arg-name init)
+                           (simple-var r rest-arg-name ))))
                      (setq restp t)
                      (setq tail (cdr tail)))
                     ((eq var '&optional) (setq argstate :optional))
@@ -245,50 +245,50 @@
                        (:optional
                         (let* ((variable (car var))
                                (initform (if (cdr var)
-                                             (cadr var)
-                                             `,default-initial-value))
+                                           (cadr var)
+                                           `,default-initial-value))
                                (anon-spvar (gensym "OPT-SUPPLIED-P"))
                                (spvar (if (cddr var)
-                                          (caddr var)))
+                                        (caddr var)))
                                (varinit `(if ,anon-spvar
-                                             (pop ,argptr)
-                                             ,initform)))
+                                           (pop ,argptr)
+                                           ,initform)))
                           (simple-var anon-spvar
                                       `(not (null  ,argptr)))
                           (if (listp variable)
-                              (structured-var "OPT" variable varinit)
-                              (simple-var variable varinit))
+                            (structured-var "OPT" variable varinit)
+                            (simple-var variable varinit))
                           (if spvar
-                              (simple-var spvar anon-spvar))))
+                            (simple-var spvar anon-spvar))))
                        (:key
                         (let* ((explicit-key (consp (car var)))
                                (variable (if explicit-key
-                                             (cadar var)
-                                             (car var)))
+                                           (cadar var)
+                                           (car var)))
                                (keyword (if explicit-key
-                                            (caar var)
-                                            (make-keyword variable)))
+                                          (caar var)
+                                          (make-keyword variable)))
                                (initform (if (cdr var)
-                                             (cadr var)
-                                             `,default-initial-value))
+                                           (cadr var)
+                                           `,default-initial-value))
                                (anon-spvar (gensym "KEY-SUPPLIED-P"))
                                (spvar (if (cddr var)
-                                          (caddr var))))
+                                        (caddr var))))
                           (push keyword keywords)
                           (let* ((sp-init (simple-var anon-spvar
                                                       `(%keyword-present-p
                                                         ,rest-arg-name
                                                         ',keyword)))
                                  (var-init `(if ,anon-spvar
-                                                (getf ,rest-arg-name ',keyword)
-                                                ,initform)))
+                                              (getf ,rest-arg-name ',keyword)
+                                              ,initform)))
                             (unless first-keyword-init
                               (setq first-keyword-init sp-init))
                             (if (listp variable)
-                                (structured-var "KEY" variable var-init)
-                                (simple-var variable var-init))
+                              (structured-var "KEY" variable var-init)
+                              (simple-var variable var-init))
                             (if spvar
-                                (simple-var spvar anon-spvar)))))
+                              (simple-var spvar anon-spvar)))))
                        (:aux
                         (simple-var (car var) (cadr var)))
                        (t (error "NYI: ~s" argstate))))
@@ -298,8 +298,8 @@
                         (simple-var var `(pop ,argptr)))
                        (:optional
                         (simple-var var `(if ,argptr
-                                             (pop ,argptr)
-                                             ',default-initial-value)))
+                                           (pop ,argptr)
+                                           ',default-initial-value)))
                        (:key
                         (let* ((keyword (make-keyword var)))
                           (push keyword keywords)
@@ -309,7 +309,7 @@
                                     `(getf ,rest-arg-name
                                            ',keyword
                                            ,@(if default-initial-value
-                                                 `(',default-initial-value))))))
+                                               `(',default-initial-value))))))
                             (unless first-keyword-init
                               (setq first-keyword-init init)))))
                        (:aux
@@ -317,8 +317,8 @@
 
 (defun make-keyword (name)
   (if (and (symbolp name) (eq (symbol-package name) (find-package :keyword)))
-      name
-      (values (intern (string name) :keyword))))
+    name
+    (values (intern (string name) :keyword))))
 
 (defun lambda-list-bounds (lambda-list)
   (let* ((state :required)
@@ -340,14 +340,14 @@
   (loop
     (if (endp tail) (return))
     (if (and (stringp (setq form (car tail))) (cdr tail))
-        (if doc-string-allowed
-            (setq doc form)
-            (return))
-        (if (not (and (consp form) (symbolp (car form))))
-            (return)
-            (if (eq (car form) 'declare)
-                (push form decls)
-                (return))))
+      (if doc-string-allowed
+        (setq doc form)
+        (return))
+      (if (not (and (consp form) (symbolp (car form))))
+        (return)
+        (if (eq (car form) 'declare)
+          (push form decls)
+          (return))))
     (setq tail (cdr tail)))
   (return-from parse-body (values tail (nreverse decls) doc)))
 
@@ -384,10 +384,10 @@
        (setq keytail (memq '&key l))
        (if (and (setq allowothertail (memq '&allow-other-keys l))
                 (not keytail))
-           (go LOSE))
+         (go LOSE))
        (if (and (eq (car resttail) '&lexpr)
                 (or keytail opttail))
-           (go lose))
+         (go lose))
        (setq auxtail (memq '&aux l))
        (loop
          (when (null l) (go WIN))
@@ -487,8 +487,8 @@
               (t
                (dolist (v x)
                  (if (eq v '&environment)
-                     (return)
-                     (push v head)))
+                   (return)
+                   (push v head)))
                (setq x (nconc (nreverse head) envtail) y (car envtail))))))
     (when (and whole-p
                (eq (car x) '&whole)
@@ -507,14 +507,14 @@
                              (consp (cddr thing))
                              (null (cdddr thing))))))
            (if (not keyword-nesting-ok)
-               (req-arg-p (car thing) lambda-list-ok)
-               (or (symbol-arg-p (car thing) lambda-list-ok)
-                   (and (consp (setq thing (car thing)))
-                        (consp (cdr thing))
-                        (null (cddr thing))
-                        (car thing)
-                        (symbolp (car thing))
-                        (req-arg-p (cadr thing) lambda-list-ok)))))))
+             (req-arg-p (car thing) lambda-list-ok)
+             (or (symbol-arg-p (car thing) lambda-list-ok)
+                 (and (consp (setq thing (car thing)))
+                      (consp (cdr thing))
+                      (null (cddr thing))
+                      (car thing)
+                      (symbolp (car thing))
+                      (req-arg-p (cadr thing) lambda-list-ok)))))))
 
 (defun req-arg-p (thing &optional lambda-list-ok)
   (or
@@ -537,7 +537,7 @@
   (do* ((tail list (cdr tail)))
        ((null tail))
     (if (eq item (car tail))
-        (return tail))))
+      (return tail))))
 
 (defvar *nx-proclaimed-ignore* '())
 
@@ -551,7 +551,7 @@
    lambda-list-ok
    (listp thing)
    (if (verify-lambda-list thing t t)
-       (setq *structured-lambda-list* t))))
+     (setq *structured-lambda-list* t))))
 
 (defun assq (item list)
   (dolist (pair list)
@@ -626,8 +626,8 @@ function and process in the warning message")
 
 (defun require-type (arg type)
   (if (typep arg type)
-      arg
-      (error "Argument ~S is not of type ~S." arg type)))
+    arg
+    (error "Argument ~S is not of type ~S." arg type)))
 
 ;;;; *LOADING-FILE-SOURCE-FILE*
 
@@ -656,30 +656,30 @@ function and process in the warning message")
 
 (defun prepare-to-destructure (list lambda-list min max)
   (if (if max
-          (and (alexandria:proper-list-p list)
-               (let* ((len (length list)))
-                 (<= min len max)))
-          (do* ((tail list (cdr tail))
-                (n min (1- n)))
-               ((zerop n) t)
-            (when (atom tail)
-              (return))))
-      list
-      (let* ((reason
-               (if max
-                   (if (not (alexandria:proper-list-p list))
-                       "it is not a proper list"
-                       (let* ((len (length list)))
-                         (if (eql min max)
-                             (format nil "it contains ~d elements, and exactly ~
+        (and (alexandria:proper-list-p list)
+             (let* ((len (length list)))
+               (<= min len max)))
+        (do* ((tail list (cdr tail))
+              (n min (1- n)))
+             ((zerop n) t)
+          (when (atom tail)
+            (return))))
+    list
+    (let* ((reason
+             (if max
+               (if (not (alexandria:proper-list-p list))
+                 "it is not a proper list"
+                 (let* ((len (length list)))
+                   (if (eql min max)
+                     (format nil "it contains ~d elements, and exactly ~
 ~d are expected" len min)
-                             (if (< len min)
-                                 (format nil "it contains ~d elements, and at ~
+                     (if (< len min)
+                       (format nil "it contains ~d elements, and at ~
 least ~d are expected" len min)
-                                 (format nil "it contains ~d elements, and at ~
+                       (format nil "it contains ~d elements, and at ~
 most ~d are expected" len max)))))
-                   (format nil "it does not contain at least ~d ~
+               (format nil "it does not contain at least ~d ~
 elements" min))))
-        (error
-         "~s can't be destructured against the lambda list ~s, because ~a."
-         list lambda-list reason))))
+      (error
+       "~s can't be destructured against the lambda list ~s, because ~a."
+       list lambda-list reason))))
