@@ -3,12 +3,8 @@
 ;;;; © Michał "phoe" Herda 2017
 ;;;; ccl-compat.lisp
 
-(in-package #:ccl)
+(in-package #:ccl-compat)
 
-;;;; Compatibility functions
-
-(defun neq (x y)
-  (not (eq x y)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; DONE
@@ -533,11 +529,16 @@
 (defun key-arg-p (thing &optional lambda-ok)
   (pair-arg-p thing lambda-ok t t))
 
+
 (defun memq (item list)
+  #-:lispworks
   (do* ((tail list (cdr tail)))
        ((null tail))
     (if (eq item (car tail))
-      (return tail))))
+      (return tail)))
+  #+:lispworks
+  (system:memq item list))
+
 
 (defvar *nx-proclaimed-ignore* '())
 
@@ -553,9 +554,14 @@
    (if (verify-lambda-list thing t t)
      (setq *structured-lambda-list* t))))
 
+
 (defun assq (item list)
+  #-:lispworks
   (dolist (pair list)
-    (when (and pair (eq (car pair) item)) (return pair))))
+    (when (and pair (eq (car pair) item)) (return pair)))
+  #+:lispworks
+  (system:assq item list))
+
 
 ;;;; RECORD-ARGLIST
 
@@ -671,15 +677,11 @@ function and process in the warning message")
                  "it is not a proper list"
                  (let* ((len (length list)))
                    (if (eql min max)
-                     (format nil "it contains ~d elements, and exactly ~
-~d are expected" len min)
+                     (format nil "it contains ~d elements, and exactly ~d are expected" len min)
                      (if (< len min)
-                       (format nil "it contains ~d elements, and at ~
-least ~d are expected" len min)
-                       (format nil "it contains ~d elements, and at ~
-most ~d are expected" len max)))))
-               (format nil "it does not contain at least ~d ~
-elements" min))))
+                       (format nil "it contains ~d elements, and at least ~d are expected" len min)
+                       (format nil "it contains ~d elements, and at most ~d are expected" len max)))))
+               (format nil "it does not contain at least ~d elements" min))))
       (error
        "~s can't be destructured against the lambda list ~s, because ~a."
        list lambda-list reason))))
