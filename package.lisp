@@ -3,8 +3,9 @@
 ;;;; © Michał "phoe" Herda 2017
 ;;;; package.lisp
 
-(defpackage #:ccl
+(defpackage #:ccl-compat
   (:use #:cl)
+  #-:lispworks (:nicknames #:ccl)
   (:export
    #:pkg-arg ;; function, DONE, edited
    #:no-such-package ;; condition, DONE, edited
